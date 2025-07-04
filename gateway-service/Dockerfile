@@ -8,6 +8,9 @@ RUN npm install
 
 COPY . .
 
+# Создаем директорию для логов
+RUN mkdir -p logs
+
 RUN npm run build
 
 EXPOSE 3000
