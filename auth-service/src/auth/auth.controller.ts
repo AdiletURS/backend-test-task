@@ -1,24 +1,22 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { Controller, Post, Body } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { User } from '../users/entities/user.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) {}
+    constructor(
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
+    ) {}
 
-    @Post('login')
-    async login(@Body() loginDto: LoginDto) {
-        const user = await this.authService.validateUser(
-            loginDto.email,
-            loginDto.password,
-        );
-        if (!user) throw new Error('Invalid credentials');
-        return this.authService.login(user);
-    }
-
-    @Post('refresh')
-    async refresh(@Body('refresh_token') refreshToken: string) {
-        return this.authService.refreshTokens(refreshToken);
+    @Post('seed')
+    async seedUser(@Body() body: { email: string; password: string }) {
+        const user = this.usersRepository.create({
+            email: body.email,
+            password: await bcrypt.hash(body.password, 10),
+        });
+        return this.usersRepository.save(user);
     }
 }
