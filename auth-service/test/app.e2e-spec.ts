@@ -3,7 +3,6 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { getConnection } from 'typeorm';
-import { User } from '../src/users/entities/user.entity';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -15,13 +14,23 @@ describe('AuthController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+
+    // Явно устанавливаем соединение
+    const connection = getConnection();
+    if (!connection.isConnected) {
+      await connection.connect();
+    }
   });
 
   afterAll(async () => {
-    await getConnection().createQueryBuilder().delete().from(User).execute();
+    const connection = getConnection();
+    if (connection.isConnected) {
+      await connection.close();
+    }
     await app.close();
   });
 
+  // Тесты...
   it('/auth/login (POST) - successful login', async () => {
     // Seed user
     await request(app.getHttpServer())
