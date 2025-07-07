@@ -1,56 +1,52 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository }             from '@nestjs/typeorm';
-import { Repository }                   from 'typeorm';
-import { Todo }                         from './entities/todo.entity';
-import { CreateTodoDto }                from './dto/create-todo.dto';
-import { UpdateTodoDto }                from './dto/update-todo.dto';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Todo } from './entities/todo.entity';
+import { CreateTodoDto } from './dto/create-todo.dto';
+import { UpdateTodoDto } from './dto/update-todo.dto';
+import {TodoMapper} from "../mappers/todo.mapper";
+import { TodoResponseDto } from './dto/todo-response.dto';
 
 @Injectable()
 export class TodosService {
     constructor(
         @InjectRepository(Todo)
-        private readonly todosRepository: Repository<Todo>,
+        private todosRepository: Repository<Todo>,
+        private readonly todoMapper: TodoMapper
     ) {}
 
-    async create(createTodoDto: CreateTodoDto, userId: string) {
-        const todo = this.todosRepository.create({
-            ...createTodoDto,
-            userId,
+    async create(createTodoDto: CreateTodoDto, userId: string): Promise<TodoResponseDto> {
+        const todoEntity = this.todoMapper.fromCreateDtoToEntity(createTodoDto, userId);
+        const savedEntity = await this.todosRepository.save(todoEntity);
+        return this.todoMapper.fromEntityToResponseDto(savedEntity);
+    }
+
+    async findAll(userId: string): Promise<TodoResponseDto[]> {
+        const entities = await this.todosRepository.find({
+            where: { userId },
+            order: { createdAt: 'DESC' }
         });
-        return this.todosRepository.save(todo);
+        return this.todoMapper.fromEntitiesToResponseDtos(entities);
     }
 
-    findAll(userId: string) {
-        return this.todosRepository.find({ where: { userId } });
+    async findOne(id: string, userId: string): Promise<TodoResponseDto> {
+        const entity = await this.todosRepository.findOne({ where: { id, userId } });
+        return this.todoMapper.fromEntityToResponseDto(entity!);
     }
 
-    async findOne(id: string, userId: string) {
-        const todo = await this.todosRepository.findOne({ where: { id, userId } });
-        if (!todo) {
-            throw new NotFoundException(`Todo with id="${id}" not found for this user`);
-        }
-        return todo;
-    }
+    async update(id: string, updateTodoDto: UpdateTodoDto, userId: string): Promise<TodoResponseDto> {
+        const existingEntity = await this.todosRepository.findOne({ where: { id, userId } });
 
-    async update(id: string, updateTodoDto: UpdateTodoDto, userId: string) {
-        // 1) Подгружаем существующий ToDo, бросаем 404, если нет
-        const todo = await this.todosRepository.findOne({ where: { id, userId } });
-        if (!todo) {
-            throw new NotFoundException(`Todo with id="${id}" not found for this user`);
+        if (!existingEntity) {
+            throw new Error('Todo not found');
         }
 
-        // 2) Копируем новые поля в сущность
-        Object.assign(todo, updateTodoDto);
-
-        // 3) Сохраняем и возвращаем обновлённую сущность
-        return this.todosRepository.save(todo);
+        const updatedEntity = this.todoMapper.fromUpdateDtoToEntity(updateTodoDto, existingEntity);
+        const savedEntity = await this.todosRepository.save(updatedEntity);
+        return this.todoMapper.fromEntityToResponseDto(savedEntity);
     }
 
-    async remove(id: string, userId: string) {
-        const result = await this.todosRepository.delete({ id, userId });
-        if (result.affected === 0) {
-            throw new NotFoundException(`Todo with id="${id}" not found for this user`);
-        }
-        return { deleted: true };
+    async remove(id: string, userId: string): Promise<void> {
+        await this.todosRepository.delete({ id, userId });
     }
 }
