@@ -32,7 +32,7 @@ import { Todo } from './todos/entities/todo.entity';
     AuthModule,
     TodosModule,
   ],
-  providers: [SeedService],
+  providers: [SeedService ],
 })
 export class AppModule implements NestModule, OnApplicationBootstrap {
   constructor(private readonly seedService: SeedService) {}

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Todo } from './entities/todo.entity';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
-import {TodoMapper} from "../mappers/todo.mapper";
+import {TodoMapper} from "./mappers/todo.mapper";
 import { TodoResponseDto } from './dto/todo-response.dto';
 
 @Injectable()

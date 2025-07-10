@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import {CreateTodoDto} from "../todos/dto/create-todo.dto";
-import {UpdateTodoDto} from "../todos/dto/update-todo.dto";
-import { Todo } from "../todos/entities/todo.entity";
-import {TodoResponseDto} from "../todos/dto/todo-response.dto";
+import {CreateTodoDto} from "../dto/create-todo.dto";
+import {UpdateTodoDto} from "../dto/update-todo.dto";
+import { Todo } from "../entities/todo.entity";
+import {TodoResponseDto} from "../dto/todo-response.dto";
 import { ITodoMapper } from "./interfaces/todo-mapper.interface";
 
 @Injectable()
